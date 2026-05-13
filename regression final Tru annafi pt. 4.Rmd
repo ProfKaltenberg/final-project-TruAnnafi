@@ -1,0 +1,61 @@
+---
+title: "Regression Final"
+output: html_document
+date: "2026-05-11"
+---
+#R runs from the top of the code to the bottom. if the order of code is messed up many error will be detected. We load libraries first because they have many tools that are needed throughout the code. If it's not imported in first the code above won't hve access to those tools and the code won't work. We upload the data next so it can be used, if it's not there there's nothing to analyze. Cleaning the data is next so r can use and read it properly. This is important because regression need numeric vales to work, like no "$" should be in front of the numbers. We create variables to chaneg the dataset to match our questions. Like we know the asos_dress variable would be used for a question where we only need the dress data. This happens before the regression because they use what exists at that moment. its important to label log variables and filtered datasets before the regressions.Regressions come last because they need clean data, the right variables, and the right structure. It's also just the main analysis step after everything is ready.
+
+```{r setup, message=FALSE, warning=FALSE}
+#Loading libraries
+library(tidyverse) #good for ggplot2. imporatnt because it helps clean and filter data and helps with plotting
+library(stargazer) #used for regression tables. formats regressions into tables, html, text etc.
+```
+
+# Import Data
+```{r}
+# read ASOS dataset and assign it to the variable asos
+asos <- read.csv("C:/Users/truth/asos_sustainability_clean.csv")
+
+# remove scientific notation. this changes how the numbers are displayed. scientific notation is a fast way to write very big or small numbers. "options" changes the r settings like formatting. "scipen" = scientific penalty(r deciding if it should use scientific notation or not). with the scipen at 100 r would avoid scientific notation
+options(scipen = 100)
+```
+
+# Data Cleaning
+```{r}
+# convert price to numeric."asos$price" gets the price column in the dataframe. "as.numeric()" make the values to a numeric type. this is important so the regression can work
+asos$price <- as.numeric(asos$price)
+
+# create logged price variable.This makes data easier to interpret with percentages. getting access to the price column in the dataframe. "log_price" is the new variable so it'll have a new column in the asos dataset since it's on the left side of the arrow. "log()" is r's natural logarithm function. so it'll take the natural log of all the prices.
+asos$log_price <- log(asos$price)
+
+#"$" - this sign gives access to a column inside of a dataframe
+```
+
+# Regression 1
+# Does sustainability affect logged price controlling for category?
+```{r}
+reg1 <- lm(log_price ~ sustainable + category, data = asos) #this is a linear regression model. lm() means linear model. log_price is DV, sustainable is IV, category is CV. telling it to use the asos datset
+summary(reg1) #shows the regression information like coefficients, p-values, R^2 etc.
+```
+
+# Regression 2
+# Does sustainability affect logged price for dresses only?
+```{r}
+asos_dress <- asos[asos$category == "dress",]
+#creating a new variable(asos_dress) that'll only contain dress data. here's the structure of filtering "dataset[rows, columns]". mine is saying to keep the rows that are equal to dress only. With nothing behind the comma all the columns will be kept.
+
+reg2 <- lm(log_price ~ sustainable, data = asos_dress) #stores the regression model into reg2, log_price is DV(left of ~), sustainable is IV(right of ~). Telling it to use the asos_dress dataset made right above.
+summary(reg2)
+```
+
+# Regression 3
+# Does the sustainability effect vary across categories?
+```{r}
+reg3 <- lm(log_price ~ sustainable * category, data = asos) #assigning this regression to reg3. log_price is DV, sustainable is IV. * is  the interaction operation connecting to category.
+summary(reg3)
+```
+
+# Regression Table
+```{r}
+stargazer(reg1, reg2, reg3, type = "html", title = "ASOS Pricing Regressions", dep.var.labels = "Log of Price", out = "regression_table.html") #combining all regressions into one table, this is good for comparing. "text" is so the display is in a text format. the "out = "regression_table.html"" exports the table as an html file
+```
